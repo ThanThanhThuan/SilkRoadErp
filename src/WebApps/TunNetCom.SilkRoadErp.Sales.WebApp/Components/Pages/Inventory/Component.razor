@@ -1,0 +1,165 @@
+﻿@page "/edit-bon-rec/{Num?}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNotes
+@using BlazorBootstrap
+@using Microsoft.Extensions.Localization
+
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.ErrorsModal
+@using TunNetCom.NotFoundModal
+@using System.Globalization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@inject IReceiptNoteApiClient receiptNoteService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> localizer
+
+<h3>@(receiptNote.Num == 0 ? localizer["new_receipt_note"] : localizer["edit_receipt_note"])</h3>
+
+<div class="container mt-4">
+    <EditForm Model="receiptNote" OnValidSubmit="HandleValidSubmit" class="row g-3">
+        <AntiforgeryToken />
+        <div class="col-md-3">
+            <label for="bonNumBF" class="form-label">@localizer["num_bon_fournisseur"]</label>
+            <InputNumber id="bonNumBF" @bind-Value="receiptNote.NumBonFournisseur" class="form-control" />
+        </div>
+        @*    <div class="col-md-9">
+            <label for="productName" class="form-label">@localizer["product_name"]</label>
+            <InputText id="productName" @bind-Value="receiptNote.Nom" class="form-control" />
+        </div> *@
+        @*    <div class="col-md-4">
+            <label for="productQte" class="form-label">@localizer["product_qte"]</label>
+            <InputNumber id="productQte" @bind-Value="receiptNote.Qte" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productQteLimite" class="form-label">@localizer["product_qteLimite"]</label>
+            <InputNumber id="productQteLimite" @bind-Value="receiptNote.QteLimite" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productRemise" class="form-label">@localizer["product_remise"]</label>
+            <InputNumber id="productRemise" @bind-Value="receiptNote.Remise" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productRemiseAchat" class="form-label">@localizer["product_remiseAchat"]</label>
+            <InputNumber id="productRemiseAchat" @bind-Value="receiptNote.RemiseAchat" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productTva" class="form-label">@localizer["product_tva"]</label>
+            <InputNumber id="productTva" @bind-Value="receiptNote.Tva" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productPrix" class="form-label">@localizer["product_prix"]</label>
+            <InputNumber id="productPrix" @bind-Value="receiptNote.Prix" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productPrixAchat" class="form-label">@localizer["product_prixAchat"]</label>
+            <InputNumber id="productPrixAchat" @bind-Value="receiptNote.PrixAchat" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productVisibility" class="form-label">@localizer["product_visibilite"]</label>
+            <Switch id="productVisibility" ValueExpression="@(() => receiptNote.Visibilite)" />
+        </div> *@
+        <div class="col-12">
+            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
+            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
+        </div>
+    </EditForm>
+</div>
+
+<Modal @ref="errorsModal" />
+
+@code {
+
+    [Parameter] public int? Num { get; set; }
+    [Inject] protected ToastService toastService { get; set; } = default!;
+    private ReceiptNoteResponse receiptNote = new ReceiptNoteResponse();
+    private CancellationTokenSource cancellationTokenSource = new();
+    private Modal errorsModal = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (Num!=null)
+        // {
+        //     var productResult = await receiptNoteService.GetAsync(Num, cancellationTokenSource.Token);
+        //     if (productResult.IsT0)
+        //     {
+        //         receiptNote = productResult.AsT0;
+        //         return;
+        //     }
+
+        //     navigationManager.NavigateTo("/Error");
+        // }
+    }
+    /*
+
+    [JsonPropertyName("lignes")]
+    public List<LigneBRRequest> Lignes { get; set; }
+         */
+    private async Task HandleValidSubmit()
+    {
+        if (Num==null)
+        {
+            var createReceiptNoteResult = await receiptNoteService.CreateReceiptNote(
+                new CreateReceiptNoteRequest
+                    {
+                        NumBonFournisseur = receiptNote.NumBonFournisseur,
+                        DateLivraison = receiptNote.DateLivraison,
+                        IdFournisseur = receiptNote.IdFournisseur,
+                        Date = receiptNote.Date,
+                        NumFactureFournisseur = receiptNote.NumFactureFournisseur,
+
+                    });
+
+            toastService.Notify(new(ToastType.Success, $"{localizer["receiptNote"]} {localizer["created_with_success"]}"));
+
+            if (createReceiptNoteResult>0)
+            {
+                toastService.Notify(new(ToastType.Success, $"{localizer["receiptNote"]} {localizer["created_with_success"]}"));
+                //navigationManager.NavigateTo("/products_list");
+                return;
+            }
+
+            await ShowErrorsModal(new string[] { "Error creation ReceiptNoteResult" }.ToList());
+            return;
+        }
+
+        // var updateReceiptNoteResult = await receiptNoteService.UpdateAsync(
+        //     new UpdateReceiptNoteRequest
+        //         {
+        //             Refe = receiptNote.Refe,
+        //             Nom = receiptNote.Nom,
+        //             Qte = receiptNote.Qte,
+        //             QteLimite = receiptNote.QteLimite,
+        //             Remise = receiptNote.Remise,
+        //             RemiseAchat = receiptNote.RemiseAchat,
+        //             Tva = receiptNote.Tva,
+        //             Prix = receiptNote.Prix,
+        //             PrixAchat = receiptNote.PrixAchat,
+        //             Visibilite = receiptNote.Visibilite
+        //         }, receiptNote.Refe,
+        //     cancellationTokenSource.Token);
+
+        // if (updateReceiptNoteResult.IsT0)
+        // {
+        //     toastService.Notify(new(ToastType.Success, $"{localizer["receiptNote"]} {localizer["updated_with_success"]}"));
+        //     navigationManager.NavigateTo("/products_list");
+        //     return;
+        // }
+
+        // await ShowErrorsModal(updateReceiptNoteResult.AsT1.ToErrorsList());
+    }
+
+    private void Cancel()
+    {
+        //navigationManager.NavigateTo("/products_list");
+    }
+
+    private async Task ShowErrorsModal(List<string> errorList)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            { Consts.ValidationParams, errorList }
+        };
+        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+    }
+}

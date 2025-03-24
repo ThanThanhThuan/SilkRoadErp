@@ -1,0 +1,486 @@
+﻿@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNotes
+@* @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services *@
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.ErrorsModal
+@using TunNetCom.NotFoundModal
+@using System.Globalization
+
+@inject IReceiptNoteApiClient ReceiptNoteApiClient
+@inject ValueService ValueService;
+@inject IStringLocalizer<SharedResource> localizer
+
+
+<head>
+
+	<style>
+		body {
+		font-family: Arial, Helvetica, sans-serif;
+		}
+
+		* {
+		box-sizing: border-box;
+		}
+
+		.form-inline {
+		display: flex;
+		flex-flow: row wrap;
+		align-items: center;
+		}
+
+		.form-inline label {
+		margin: 5px 10px 5px 0;
+		}
+
+		.form-inline input {
+		vertical-align: middle;
+		margin: 5px 10px 5px 0;
+		padding: 10px;
+		background-color: #fff;
+		border: 1px solid #ddd;
+		width:100px;
+		}
+
+		.form-inline button {
+		padding: 10px 20px;
+		background-color: dodgerblue;
+		border: 1px solid #ddd;
+		color: white;
+		cursor: pointer;
+		}
+
+		.form-inline button:hover {
+		background-color: royalblue;
+		}
+
+		
+		.right {
+			text-align: right;
+		}
+	
+	</style>
+</head>
+@* <InputText placeholder="@Title" @onchange="Changed" /> *@
+@* <EditForm FormProduct="Hello" Model="this" OnSubmit="Submit">
+	<InputText @bind-Value="Product" />
+	<button type="submit">Submit</button>
+</EditForm> *@
+<button type="button" class="btn btn-info" @onclick="AddLine">Add Line</button>
+<button type="button" class="btn btn-primary" @onclick="Save" >Save</button>
+<div>
+	<label> Product</label>
+
+	<label style="margin-left: 250px;">  <b>Quantity</b></label>
+	<label style="margin-left: 40px;">  <b>Price</b></label>
+	<label style="margin-left: 70px;">  <b>Amount</b></label>
+	<label style="margin-left: 50px;">  <b>VAT %</b></label>
+	<label style="margin-left: 60px;">  <b>VAT</b></label>
+	<label style="margin-left: 60px;">  <b>Amount VAT Included</b></label>
+</div>
+<EditForm id="f1" class='form-inline' FormName="Hello" Model="this">
+	<InputText  Value="@Product1" ValueChanged="Product1Changed" ValueExpression="() => Product1" />
+	<label style="@styleProduct1">@txtProduct1</label>
+	<InputNumber  TValue="int"  class="right" Value="@Quantity1" ValueChanged="Quantity1Changed" ValueExpression="() => Quantity1" />
+	<InputNumber  TValue="decimal"  class="right" Value="@Price1" ValueChanged="Price1Changed" ValueExpression="() => Price1" />
+	<InputNumber  @bind-Value="Amount1" class="right"/>
+	<InputNumber  @bind-Value="VATPC1" class="right" />
+	<InputNumber  @bind-Value="VAT1" class="right" />
+	<InputNumber  @bind-Value="AmountVATIncl1" class="right" />
+
+</EditForm>
+<EditForm id="f2" hidden="@HideLabel2" class='form-inline' Model="this">
+	<InputText Value="@Product2" ValueChanged="Product2Changed" ValueExpression="() => Product2" />
+	<label style="@styleProduct2">@txtProduct2</label>
+	<InputNumber class="right" TValue="int" Value="@Quantity2" ValueChanged="Quantity2Changed" ValueExpression="() => Quantity2" />
+	<InputNumber class="right" TValue="decimal" Value="@Price2" ValueChanged="Price2Changed" ValueExpression="() => Price2" />
+	<InputNumber class="right" @bind-Value="Amount2" />
+	<InputNumber  @bind-Value="VATPC2" class="right" />
+	<InputNumber  @bind-Value="VAT2" class="right" />
+	<InputNumber  @bind-Value="AmountVATIncl2" class="right" />
+	<button type="button" style="background-color:red" @onclick="@RemoveLine2">X</button>
+</EditForm>
+<EditForm id="f3" hidden="@HideLabel3" class='form-inline' Model="this">
+	<InputText Value="@Product3" ValueChanged="Product3Changed" ValueExpression="() => Product3" />
+	<label style="@styleProduct3">@txtProduct3</label>
+	<InputNumber class="right" TValue="int" Value="@Quantity3" ValueChanged="Quantity3Changed" ValueExpression="() => Quantity3" />
+	<InputNumber class="right" TValue="decimal" Value="@Price3" ValueChanged="Price3Changed" ValueExpression="() => Price3" />
+	<InputNumber class="right" @bind-Value="Amount3" />
+	<InputNumber  @bind-Value="VATPC3" class="right" />
+	<InputNumber  @bind-Value="VAT3" class="right" />
+	<InputNumber  @bind-Value="AmountVATIncl3" class="right" />
+	<button type="button" style="background-color:red" @onclick="@RemoveLine3">X</button>
+</EditForm>
+<EditForm id="f4" hidden="@HideLabel4" class='form-inline' Model="this">
+	<InputText Value="@Product4" ValueChanged="Product4Changed" ValueExpression="() => Product4" />
+	<label style="@styleProduct4">@txtProduct4</label>
+	<InputNumber class="right" TValue="int" Value="@Quantity4" ValueChanged="Quantity4Changed" ValueExpression="() => Quantity4" />
+	<InputNumber class="right" TValue="decimal" Value="@Price4" ValueChanged="Price4Changed" ValueExpression="() => Price4" />
+	<InputNumber class="right" @bind-Value="Amount4" />
+	<InputNumber  @bind-Value="VATPC4" class="right" />
+	<InputNumber  @bind-Value="VAT4" class="right" />
+	<InputNumber  @bind-Value="AmountVATIncl4" class="right" />
+
+	<button type="button" style="background-color:red" @onclick="@RemoveLine4">X</button>
+</EditForm>
+<EditForm id="f5" hidden="@HideLabel5" class='form-inline' Model="this">
+	<InputText Value="@Product5" ValueChanged="Product5Changed" ValueExpression="() => Product5" />
+	<label style="@styleProduct5">@txtProduct5</label>
+	<InputNumber class="right" TValue="int" Value="@Quantity5" ValueChanged="Quantity5Changed" ValueExpression="() => Quantity5" />
+	<InputNumber class="right" TValue="decimal" Value="@Price5" ValueChanged="Price5Changed" ValueExpression="() => Price5" />
+	<InputNumber class="right" @bind-Value="Amount5" />
+	<InputNumber  @bind-Value="VATPC5" class="right" />
+	<InputNumber  @bind-Value="VAT5" class="right" />
+	<InputNumber  @bind-Value="AmountVATIncl5" class="right" />
+	<button type="button" style="background-color:red" @onclick="@RemoveLine5">X</button>
+</EditForm>
+<EditForm id="f6" hidden="@HideLabel6" class='form-inline' Model="this">
+	<InputText Value="@Product6" ValueChanged="Product6Changed" ValueExpression="() => Product6" />
+	<label style="@styleProduct6">@txtProduct6</label>
+	<InputNumber class="right" TValue="int" Value="@Quantity6" ValueChanged="Quantity6Changed" ValueExpression="() => Quantity6" />
+	<InputNumber class="right" TValue="decimal" Value="@Price6" ValueChanged="Price6Changed" ValueExpression="() => Price6" />
+	<InputNumber class="right" @bind-Value="Amount6" />
+	<InputNumber  @bind-Value="VATPC6" class="right" />
+	<InputNumber  @bind-Value="VAT6" class="right" />
+	<InputNumber  @bind-Value="AmountVATIncl6" class="right" />
+	<button type="button" style="background-color:red" @onclick="@RemoveLine6">X</button>
+</EditForm>
+<Modal @ref="errorsModal" />
+@code {
+
+	[Parameter]
+	public string Title { get; set; }
+	[Inject] protected ToastService toastService { get; set; } = default!;
+	private CreateReceiptNoteRequest receiptNote = new CreateReceiptNoteRequest();
+	private Modal errorsModal = default!;
+
+	#region "Arrays"
+
+	private string Product1 = "";
+	private string Product2 = "";
+	private string Product3 = "";
+	private string Product4 = "";
+	private string Product5 = "";
+	private string Product6 = "";
+	private string txtProduct1 =  "==Enter a valid Product Code";
+
+	private string txtProduct2 =  "==Enter a valid Product Code";
+
+	private string txtProduct3 = "==Enter a valid Product Code";
+	private string txtProduct4 = "==Enter a valid Product Code";
+
+	private string txtProduct5 = "==Enter a valid Product Code";
+
+	private string txtProduct6 = "==Enter a valid Product Code";
+
+	private string styleProduct1 = "width:180px;color:black;";
+	private string styleProduct2 = "width:180px;color:black;";
+	private string styleProduct3 = "width:180px;color:black;";
+	private string styleProduct4 = "width:180px;color:black;";
+	private string styleProduct5 = "width:180px;color:black;";
+	private string styleProduct6 = "width:180px;color:black;";
+	private int Quantity1 ;
+	private int Quantity2 ;
+	private int Quantity3 ;
+	private int Quantity4 ;
+	private int Quantity5;
+	private int Quantity6;
+	private decimal Price1;
+	private decimal Price2;
+	private decimal Price3;
+	private decimal Price4;
+	private decimal Price5;
+	private decimal Price6;
+	private decimal Amount1;
+	private decimal Amount2;
+	private decimal Amount3;
+	private decimal Amount4;
+	private decimal Amount5;
+	private decimal Amount6;
+	private decimal VATPC1;
+	private decimal VATPC2;
+	private decimal VATPC3;
+	private decimal VATPC4;
+	private decimal VATPC5;
+	private decimal VATPC6;
+	private decimal VAT1;
+	private decimal VAT2;
+	private decimal VAT3;
+	private decimal VAT4;
+	private decimal VAT5;
+	private decimal VAT6;
+	private decimal AmountVATIncl1;
+	private decimal AmountVATIncl2;
+	private decimal AmountVATIncl3;
+	private decimal AmountVATIncl4;
+	private decimal AmountVATIncl5;
+	private decimal AmountVATIncl6;
+	private bool HideLabel2 { get; set; } = true;
+	private bool HideLabel3 { get; set; } = true;
+	private bool HideLabel4 { get; set; } = true;
+	private bool HideLabel5 { get; set; } = true;
+	private bool HideLabel6 { get; set; } = true;
+	#endregion
+	private Dictionary<string, string> FormProducts =new();
+	override protected void OnInitialized()
+	{
+		FormProducts = new Dictionary<string, string>();
+		FormProducts.Add("0001", "Apple");
+		FormProducts.Add("0002", "Banana");
+		FormProducts.Add("0003", "Coconut");
+		FormProducts.Add("0004", "Orange");
+		FormProducts.Add("0005", "Kiwi");
+		FormProducts.Add("0006", "Grape");
+	}
+	private void AddLine()
+	{
+		//HideLabel2 = false;
+		if (HideLabel2)
+		{
+			HideLabel2 = false;
+		}
+		else if (HideLabel3)
+		{
+			HideLabel3 = false;
+		}
+		else if (HideLabel4)
+		{
+			HideLabel4 = false;
+		}
+		else if (HideLabel5)
+		{
+			HideLabel5 = false;
+		}
+		else if (HideLabel6)
+		{
+			HideLabel6 = false;
+		}
+		//ValueService.SetValue("777");
+	}
+
+
+	#region "Events"
+	private void RemoveLine2() => HideLabel2 = true;
+	private void RemoveLine3() => HideLabel3 = true;
+	private void RemoveLine4() => HideLabel4 = true;
+	private void RemoveLine5() => HideLabel5 = true;
+	private void RemoveLine6() => HideLabel6 = true;
+
+
+	private void Product1Changed(string args)
+	{
+		Product1 = args;
+		//Console.WriteLine(args); ok
+		if (FormProducts.ContainsKey(args))
+		{
+			styleProduct1 = "width:180px;color:black;";
+			txtProduct1 = FormProducts[args];
+		}
+		else
+		{
+			styleProduct1 = "width:180px;color:red;";
+			txtProduct1 ="==Invalid Product Code";
+		}
+	}
+	private void Quantity1Changed(int args)
+	{
+		Quantity1=args;
+		Amount1 = Quantity1 * Price1;
+	}
+
+	private void Price1Changed(decimal args)
+	{
+		Price1 = args;
+		Amount1 = Quantity1 * Price1;
+	}
+
+	private void Product2Changed(string args)
+	{
+		Product2 = args;
+		//Console.WriteLine(args); ok
+		if (FormProducts.ContainsKey(args))
+		{
+			styleProduct2 = "width:180px;color:black;";
+			txtProduct2 = FormProducts[args];
+		}
+		else
+		{
+			styleProduct2 = "width:180px;color:red;";
+			txtProduct2 = "==Invalid Product Code";
+		}
+	}
+	private void Quantity2Changed(int args)
+	{
+		Quantity2 = args;
+		Amount2 = Quantity2 * Price2;
+	}
+
+	private void Price2Changed(decimal args)
+	{
+		Price2 = args;
+		Amount2 = Quantity2 * Price2;
+	}
+
+	private void Product3Changed(string args)
+	{
+		Product3 = args;
+		//Console.WriteLine(args); ok
+		if (FormProducts.ContainsKey(args))
+		{
+			styleProduct3 = "width:180px;color:black;";
+			txtProduct3 = FormProducts[args];
+		}
+		else
+		{
+			styleProduct3 = "width:180px;color:red;";
+			txtProduct3 = "==Invalid Product Code";
+		}
+	}
+	private void Quantity3Changed(int args)
+	{
+		Quantity3 = args;
+		Amount3 = Quantity3 * Price3;
+	}
+
+	private void Price3Changed(decimal args)
+	{
+		Price3 = args;
+		Amount3 = Quantity3 * Price3;
+	}
+
+	private void Product4Changed(string args)
+	{
+		Product4 = args;
+		//Console.WriteLine(args); ok
+		if (FormProducts.ContainsKey(args))
+		{
+			styleProduct4 = "width:180px;color:black;";
+			txtProduct4 = FormProducts[args];
+		}
+		else
+		{
+			styleProduct4 = "width:180px;color:red;";
+			txtProduct4 = "==Invalid Product Code";
+		}
+	}
+	private void Quantity4Changed(int args)
+	{
+		Quantity4 = args;
+		Amount4 = Quantity4 * Price4;
+	}
+
+	private void Price4Changed(decimal args)
+	{
+		Price4 = args;
+		Amount4 = Quantity4 * Price4;
+	}
+
+	private void Product5Changed(string args)
+	{
+		Product5 = args;
+		//Console.WriteLine(args); ok
+		if (FormProducts.ContainsKey(args))
+		{
+			styleProduct5 = "width:180px;color:black;";
+			txtProduct5 = FormProducts[args];
+		}
+		else
+		{
+			styleProduct5 = "width:180px;color:red;";
+			txtProduct5 = "==Invalid Product Code";
+		}
+	}
+	private void Quantity5Changed(int args)
+	{
+		Quantity5 = args;
+		Amount5 = Quantity5 * Price5;
+	}
+
+	private void Price5Changed(decimal args)
+	{
+		Price5 = args;
+		Amount5 = Quantity5 * Price5;
+	}
+
+	private void Product6Changed(string args)
+	{
+		Product6 = args;
+		//Console.WriteLine(args); ok
+		if (FormProducts.ContainsKey(args))
+		{
+			styleProduct6 = "width:180px;color:black;";
+			txtProduct6 = FormProducts[args];
+		}
+		else
+		{
+			styleProduct6 = "width:180px;color:red;";
+			txtProduct6 = "==Invalid Product Code";
+		}
+	}
+	private void Quantity6Changed(int args)
+	{
+		Quantity6 = args;
+		Amount6 = Quantity6 * Price6;
+	}
+
+	private void Price6Changed(decimal args)
+	{
+		Price6 = args;
+		Amount6 = Quantity6 * Price6;
+	}
+	#endregion
+	private async Task Save(MouseEventArgs args)
+	{
+		receiptNote = ValueService.GetReceiptNote()!;
+		receiptNote.Lignes = new List<LigneBRRequest>();
+		if (!txtProduct1.StartsWith("=") && Quantity1 >0)
+		{
+			receiptNote.Lignes.Add(new LigneBRRequest {  RefProduit = Product1, DesignationLi=txtProduct1,  QteLi= Quantity1,  PrixHt = Price1 ,TotHt=Amount1});
+		}
+		if (!HideLabel2 && !txtProduct2.StartsWith("=") && Quantity2 > 0)
+		{
+			receiptNote.Lignes.Add(new LigneBRRequest { RefProduit = Product2, DesignationLi = txtProduct2, QteLi = Quantity2, PrixHt = Price2, TotHt = Amount2 });
+		}
+		if (!HideLabel3 && !txtProduct3.StartsWith("=") && Quantity3 > 0)
+		{
+			receiptNote.Lignes.Add(new LigneBRRequest { RefProduit = Product3, DesignationLi = txtProduct3, QteLi = Quantity3, PrixHt = Price3, TotHt = Amount3 });
+		}
+		if (!HideLabel4 && !txtProduct4.StartsWith("=") && Quantity4 > 0)
+		{
+			receiptNote.Lignes.Add(new LigneBRRequest { RefProduit = Product4, DesignationLi = txtProduct4, QteLi = Quantity4, PrixHt = Price4, TotHt = Amount4 });
+		}
+		if (!HideLabel5 && !txtProduct5.StartsWith("=") && Quantity5 > 0)
+		{
+			receiptNote.Lignes.Add(new LigneBRRequest { RefProduit = Product5, DesignationLi = txtProduct5, QteLi = Quantity5, PrixHt = Price5, TotHt = Amount5 });
+		}
+		if (!HideLabel6 && !txtProduct6.StartsWith("=") && Quantity6 > 0)
+		{
+			receiptNote.Lignes.Add(new LigneBRRequest { RefProduit = Product6, DesignationLi = txtProduct6, QteLi = Quantity6, PrixHt = Price6, TotHt = Amount6 });
+		}
+		
+		var createReceiptNoteResult = await ReceiptNoteApiClient.CreateReceiptNote(receiptNote);
+
+		toastService.Notify(new(ToastType.Success, $"{localizer["receiptNote"]} {localizer["created_with_success"]}"));
+
+		
+		if (createReceiptNoteResult > 0)
+		{
+			toastService.Notify(new(ToastType.Success, $"{localizer["receiptNote"]} {localizer["created_with_success"]}"));
+			//navigationManager.NavigateTo("/products_list");
+			return;
+		}
+
+		await ShowErrorsModal(new string[] { "Error creation ReceiptNoteResult" }.ToList());
+		return;
+
+	}
+	private async Task ShowErrorsModal(List<string> errorList)
+	{
+		var parameters = new Dictionary<string, object>
+		{
+			{ Consts.ValidationParams, errorList }
+		};
+		await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+	}
+}

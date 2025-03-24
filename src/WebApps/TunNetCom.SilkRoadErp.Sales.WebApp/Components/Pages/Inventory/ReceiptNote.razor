@@ -1,0 +1,285 @@
+﻿@page "/receipt-note"
+
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNotes
+@inject IJSRuntime JSRuntime
+@inject ValueService ValueService;
+<head>
+
+	<style>
+		body {
+		font-family: Arial, Helvetica, sans-serif;
+		}
+
+		* {
+		box-sizing: border-box;
+		}
+
+		.form-inline {
+		display: flex;
+		flex-flow: row wrap;
+		align-items: center;
+		}
+
+		.form-inline label {
+		margin: 5px 10px 5px 0;
+		}
+
+		.form-inline input {
+		vertical-align: middle;
+		margin: 5px 10px 5px 0;
+		padding: 10px;
+		background-color: #fff;
+		border: 1px solid #ddd;
+		}
+
+		.form-inline button {
+		padding: 10px 20px;
+		background-color: dodgerblue;
+		border: 1px solid #ddd;
+		color: white;
+		cursor: pointer;
+		}
+
+		.form-inline button:hover {
+		background-color: royalblue;
+		}
+
+
+	</style>
+</head>
+<h3>New Receipt Note</h3>
+<div class="container mt-4">
+	<EditForm Model="receiptNote" class="row g-3">
+		<AntiforgeryToken />
+		<div class="col-md-4">
+			<label for="bonNumBF" class="form-label">Supplier's Note No.</label>
+			<InputNumber id="bonNumBF" @bind-Value="receiptNote.NumBonFournisseur" class="form-control" />
+		</div>
+		<div class="col-md-4">
+			<label for="dateLiv" class="form-label">Date of Delivery</label>
+			<input type="date" id="dateLiv" @bind="receiptNote.DateLivraison" class="form-control" />
+		</div>
+			<div class="col-md-4">
+			<label for="idFournisseur" class="form-label">Supplier Code</label>
+			<InputNumber id="idFournisseur" @bind-Value="receiptNote.IdFournisseur" class="form-control" />
+		</div>
+		<div class="col-md-4">
+			<label for="date" class="form-label">Date</label>
+			<input type="date" id="date" @bind="receiptNote.Date" class="form-control" />
+		</div>
+		<div class="col-md-4">
+			<label for="numFactureFournisseur" class="form-label">Supplier's Invoice No.</label>
+			<InputNumber id="numFactureFournisseur" @bind-Value="receiptNote.NumFactureFournisseur" class="form-control" />
+		</div>
+		<div class="col-md-4">
+			<label class="form-label">@txtSupplier</label>
+			
+		</div>
+
+	@* 	   <div class="col-md-9">
+            <label for="productName" class="form-label">Product Code</label>
+            <InputText id="productName" @bind-Value="receiptNote.Ref_Produit" class="form-control" />
+        </div> *@
+		@*    <div class="col-md-4">
+            <label for="productQte" class="form-label">@localizer["product_qte"]</label>
+            <InputNumber id="productQte" @bind-Value="receiptNote.Qte" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productQteLimite" class="form-label">@localizer["product_qteLimite"]</label>
+            <InputNumber id="productQteLimite" @bind-Value="receiptNote.QteLimite" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productRemise" class="form-label">@localizer["product_remise"]</label>
+            <InputNumber id="productRemise" @bind-Value="receiptNote.Remise" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productRemiseAchat" class="form-label">@localizer["product_remiseAchat"]</label>
+            <InputNumber id="productRemiseAchat" @bind-Value="receiptNote.RemiseAchat" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productTva" class="form-label">@localizer["product_tva"]</label>
+            <InputNumber id="productTva" @bind-Value="receiptNote.Tva" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productPrix" class="form-label">@localizer["product_prix"]</label>
+            <InputNumber id="productPrix" @bind-Value="receiptNote.Prix" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productPrixAchat" class="form-label">@localizer["product_prixAchat"]</label>
+            <InputNumber id="productPrixAchat" @bind-Value="receiptNote.PrixAchat" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productVisibility" class="form-label">@localizer["product_visibilite"]</label>
+            <Switch id="productVisibility" ValueExpression="@(() => receiptNote.Visibilite)" />
+        </div> *@
+		@* <div class="col-12">
+			<input type="submit" class="btn btn-primary" value="Save" />
+			<input type="button" class="btn btn-secondary" @onclick="Cancel" value="Cancel" />
+		</div> *@
+	</EditForm>
+</div>
+
+<Modal @ref="errorsModal" />
+
+<button @onclick="RenderComponent">Header Checked</button>
+<div>
+	<hr />
+</div>
+
+
+
+@* <p id="count" role="status">@currentCount</p> *@
+
+
+@* <input id="inp" @bind="currentCount" /> *@
+
+
+@* <button class="btn btn-primary" @onclick="IncrementCount">Add Line</button>
+<button class="btn btn-primary" @onclick="FindLine">Find Line</button> *@
+
+<div id="iyzipay-checkout-form" class="responsive"></div>
+<div id="component-container">
+	@DynamicRender
+</div>
+
+@code {
+	[Inject] protected ToastService toastService { get; set; } = default!;
+	private CreateReceiptNoteRequest receiptNote = new CreateReceiptNoteRequest();
+	private CancellationTokenSource cancellationTokenSource = new();
+	private Modal errorsModal = default!;
+	private int currentCount = 0;
+	private int maxEverCount = 0;
+	private string txtSupplier = "WonderFarm";
+	// private string? name;
+	// private string? result;
+	// private DotNetObjectReference<ReceiptNote>? objRef;
+	private RenderFragment DynamicRender { get; set; }
+
+	private RenderFragment CreateComponent() => builder =>
+	{
+		builder.OpenComponent(0, typeof(DetailLines));
+		builder.AddAttribute(1, "Title", "Enter your text");
+		builder.CloseComponent();
+	};
+	private async Task IncrementCount()
+	{
+		// currentCount = Convert.ToInt32(ValueService.GetValue());
+		// return;
+
+		currentCount++;
+		maxEverCount++;
+		//int row = 3;
+		// var checkout = @"<div style='display:inline!important;'> <form style='display:inline!important;'>
+		var checkout = @"<div id='d" + maxEverCount.ToString() + @"'> <form class='form-inline'>
+
+      <input type = 'text' id = 'fname' name = 'fname' />
+
+      <input type = 'text' id = 'lname' name = 'lname' />
+      <button type='button' style=""background-color:red"" onclick=""injectRemoveScript('d" + maxEverCount.ToString() + @"')"">Remove</button>
+</form></div";
+		//</form></div> ";
+		await JSRuntime.InvokeVoidAsync("injectIyzicoScript", checkout);
+	}
+
+	// override protected void OnAfterRender(bool firstRender)
+	// {
+	// 	if (firstRender)
+	// 	{
+	// 		DynamicRender = CreateComponent();
+	// 	}
+	// }
+
+	private async Task FindLine(MouseEventArgs args)
+	{
+		await JSRuntime.InvokeVoidAsync("findLineScript", "");
+	}
+
+	private void RenderComponent(MouseEventArgs args)
+	{
+	
+		ValueService.SetReceiptNote(receiptNote);
+
+		if (DynamicRender == null)
+		{
+			DynamicRender = CreateComponent();
+		}
+		
+	}
+	private void Cancel(MouseEventArgs args)
+	{
+		throw new NotImplementedException();
+	}
+}
+<script src="_framework/blazor.webassembly.js"></script>
+<script>
+    window.findLineScript = (scriptContent) => {
+        const div = document.getElementById("fname");
+        if (div != null) {
+            alert('found');
+        } else {
+             alert('not found');
+        }
+    };
+    window.injectIyzicoScript = (scriptContent) => {
+        const div = document.getElementById("iyzipay-checkout-form");
+        if (div != null) {
+            div.insertAdjacentHTML("beforeend", scriptContent);
+        } else {
+            console.error('Element with id "iyzipay-checkout-form" not found.');
+        }
+    };
+    window.injectRemoveScript = (scriptContent) => {
+        const div = document.getElementById(scriptContent);
+    //         var elems = document.querySelectorAll("#"+ scriptContent +" > [name]")
+    // console.log(elems.length)
+    // Array.from(elems).forEach( function (el) {
+    //    alert(el.getAttribute("name"));
+    // });
+
+   
+    var relevantChildren = div.querySelectorAll( "input" );
+	var cval=relevantChildren[0].value;
+        if (cval === null || cval.trim() === "") {
+      alert ("blank input");
+    } else {
+      alert (cval);
+    }
+    //alert (relevantChildren[0].value); //good , needs to catch null
+    //  Array.from(relevantChildren).forEach( function (el) {
+    //    //alert(el.getAttribute("name"));
+    //     alert(el);
+    // });
+    //alert (relevantChildren[2].id); // this will give the id of the 3rd child element with data-relevant='true'
+        div.remove();
+		
+         //document.getElementById("inp").value = document.getElementById("inp").defaultValue = 11;
+    var myElement = document.getElementById('inp');
+    var curCount = myElement.value - 1;
+    myElement.value = curCount;
+    var event = new Event('change');
+    myElement.dispatchEvent(event);
+        //DotNet.invokeMethodAsync('ReceiptNote', 'SetCurrentCount2');
+        //dotNetHelper.invokeMethodAsync('SetCurrentCount2');
+        
+    };
+
+    window.removeScript = (dotNetHelper, currentCount1 ) => {
+         return dotNetHelper.invokeMethodAsync('SetCurrentCount',  currentCount1);
+
+    };
+       
+     window.sayHello1 = (dotNetHelper,name) => {
+      return dotNetHelper.invokeMethodAsync('GetHelloMessage', name);
+    };
+
+</script>
+<script>
+    window.returnArrayAsync = () => {
+      DotNet.invokeMethodAsync('ReceiptNote', 'ReturnArrayAsync')
+        .then(data => {
+          console.log(data);
+        });
+      };
+</script>
